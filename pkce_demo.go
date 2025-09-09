@@ -20,22 +20,22 @@ func pkceDemo(w http.ResponseWriter, r *http.Request) {
 	// デフォルト値
 	clientID := r.URL.Query().Get("client_id")
 	if clientID == "" {
-		clientID = "fdaaf3fdafd3fs"
+		clientID = "oauth2_demo_client"
 	}
 
 	clientSecret := r.URL.Query().Get("client_secret")
 	if clientSecret == "" {
-		clientSecret = "dfafdsa3fda"
+		clientSecret = "demo_client_secret_12345"
 	}
 
 	redirectURI := r.URL.Query().Get("redirect_uri")
 	if redirectURI == "" {
-		redirectURI = "http://localhost:3000/"
+		redirectURI = "http://localhost:3000/callback"
 	}
 
 	scope := r.URL.Query().Get("scope")
 	if scope == "" {
-		scope = "read write"
+		scope = "read write openid profile"
 	}
 
 	state := r.URL.Query().Get("state")

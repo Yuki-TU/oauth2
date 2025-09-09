@@ -79,15 +79,34 @@ make run
 `init.sql` には以下のテストデータが含まれています：
 
 ### テストユーザー
-- Username: testuser
-- Password: password123
-- Email: test@example.com
+- **testuser** / password123 (test@example.com)
+- **demo** / password123 (demo@example.com)  
+- **admin** / password123 (admin@example.com)
 
 ### テストクライアント
-- Client ID: fdaaf3fdafd3fs
-- Client Secret: dfafdsa3fda
-- Redirect URI: http://localhost:3000/
-- Scopes: read, write
+
+#### メインデモクライアント
+- Client ID: oauth2_demo_client
+- Client Secret: demo_client_secret_12345
+- Name: OAuth2 Demo Application
+- Redirect URIs: 
+  - http://localhost:3000/callback
+  - http://localhost:3000/auth/callback
+  - https://oauthdebugger.com/debug
+- Scopes: read, write, openid, profile, email
+
+#### SPAクライアント（PKCE推奨）
+- Client ID: spa_client_example
+- Client Secret: spa_secret_abcdef67890
+- Name: Single Page Application
+- Redirect URIs:
+  - http://localhost:8080/callback
+  - http://127.0.0.1:8080/callback
+- Scopes: read, profile
+
+#### その他のクライアント
+- **モバイルアプリ**: mobile_app_client
+- **管理コンソール**: admin_console
 
 ## 使用例
 
@@ -104,10 +123,10 @@ make run
 
 ### 手動でのOAuth2フロー
 
-#### PKCEありの場合（推奨）
+#### メインデモクライアント（PKCEありの場合・推奨）
 1. ブラウザで認可エンドポイントにアクセス：
 ```
-http://localhost:8080/authorize?client_id=fdaaf3fdafd3fs&redirect_uri=http://localhost:3000/&response_type=code&scope=read%20write&state=xyz123&nonce=n-0S6_WzA2Mj&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256
+http://localhost:8080/authorize?client_id=oauth2_demo_client&redirect_uri=http://localhost:3000/callback&response_type=code&scope=read%20write%20openid&state=xyz123&nonce=n-0S6_WzA2Mj&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256
 ```
 
 2. ログイン（既存ユーザー: testuser/password123 または新規作成したユーザー）
@@ -118,12 +137,17 @@ http://localhost:8080/authorize?client_id=fdaaf3fdafd3fs&redirect_uri=http://loc
 ```bash
 curl -X POST http://localhost:8080/token \
   -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "grant_type=authorization_code&code=<認可コード>&client_id=fdaaf3fdafd3fs&client_secret=dfafdsa3fda&redirect_uri=http://localhost:3000/&code_verifier=<code_verifier>"
+  -d "grant_type=authorization_code&code=<認可コード>&client_id=oauth2_demo_client&client_secret=demo_client_secret_12345&redirect_uri=http://localhost:3000/callback&code_verifier=<code_verifier>"
 ```
 
-#### PKCEなしの場合
+#### SPAクライアント（PKCE必須）
 ```
-http://localhost:8080/authorize?client_id=fdaaf3fdafd3fs&redirect_uri=http://localhost:3000/&response_type=code&scope=read
+http://localhost:8080/authorize?client_id=spa_client_example&redirect_uri=http://localhost:8080/callback&response_type=code&scope=read%20profile&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256
+```
+
+#### PKCEなしの場合（非推奨）
+```
+http://localhost:8080/authorize?client_id=oauth2_demo_client&redirect_uri=http://localhost:3000/callback&response_type=code&scope=read
 ```
 
 トークン交換時はcode_verifierパラメータなしでOK。

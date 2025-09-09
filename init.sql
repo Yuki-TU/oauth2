@@ -77,3 +77,35 @@ CREATE TABLE IF NOT EXISTS sessions (
 -- セッションテーブルのインデックス
 CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
+
+-- サンプルデータの挿入
+
+-- テストユーザーの挿入（パスワード: password123）
+INSERT INTO users (username, password_hash, email) VALUES 
+('testuser', '$2a$10$ei3h8UKPrJxoLzIRBUeE/uk.tLTqJXDlprnrnt./WceLuKxVZs7Yq', 'test@example.com'),
+('demo', '$2a$10$ei3h8UKPrJxoLzIRBUeE/uk.tLTqJXDlprnrnt./WceLuKxVZs7Yq', 'demo@example.com'),
+('admin', '$2a$10$ei3h8UKPrJxoLzIRBUeE/uk.tLTqJXDlprnrnt./WceLuKxVZs7Yq', 'admin@example.com')
+ON CONFLICT (username) DO NOTHING;
+
+-- テストクライアントの挿入
+INSERT INTO oauth_clients (client_id, client_secret, name, redirect_uris, scopes) VALUES 
+-- Webアプリケーション用クライアント
+('oauth2_demo_client', 'demo_client_secret_12345', 'OAuth2 Demo Application', 
+ '{"http://localhost:3000/callback", "http://localhost:3000/auth/callback", "https://oauthdebugger.com/debug"}',
+ '{"read", "write", "openid", "profile", "email"}'),
+
+-- SPAアプリケーション用クライアント（PKCE必須）
+('spa_client_example', 'spa_secret_abcdef67890', 'Single Page Application', 
+ '{"http://localhost:8080/callback", "http://127.0.0.1:8080/callback"}',
+ '{"read", "profile"}'),
+
+-- モバイルアプリ用クライアント
+('mobile_app_client', 'mobile_secret_xyz789012', 'Mobile Application', 
+ '{"com.example.oauth://callback", "https://app.example.com/auth/callback"}',
+ '{"read", "write", "push_notifications"}'),
+
+-- 管理者用クライアント
+('admin_console', 'admin_secret_super_secure_456', 'Admin Console', 
+ '{"http://localhost:8081/admin/callback"}',
+ '{"read", "write", "admin", "user_management"}')
+ON CONFLICT (client_id) DO NOTHING;
