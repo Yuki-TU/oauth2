@@ -29,11 +29,20 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 		<p><strong>State:</strong> %s</p>
 		<p>認可が正常に完了しました。このコードを使用してアクセストークンを取得できます。</p>
 		<hr>
-		<h2>トークン取得例</h2>
+		<h2>トークン取得例（PKCE対応）</h2>
+		<p><strong>注意:</strong> PKCEを使用している場合、認可リクエスト時に使用したcode_verifierが必要です。</p>
 		<pre>
 curl -X POST http://localhost:8080/token \
   -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "grant_type=authorization_code&code=%s&redirect_uri=http://localhost:8080/callback&client_id=client1&client_secret=secret"
+  -d "grant_type=authorization_code&code=%s&redirect_uri=http://localhost:8080/callback&client_id=client1&client_secret=secret&code_verifier=YOUR_CODE_VERIFIER"
 		</pre>
-	`, code, state, code)
+		<hr>
+		<h2>テスト用（正しいクライアント情報）</h2>
+		<pre>
+curl -X POST http://localhost:8080/token \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "grant_type=authorization_code&code=%s&redirect_uri=http://localhost:3000/&client_id=fdaaf3fdafd3fs&client_secret=dfafdsa3fda&code_verifier=YOUR_CODE_VERIFIER"
+		</pre>
+		<p><small>YOUR_CODE_VERIFIER を実際のcode_verifierに置き換えてください</small></p>
+	`, code, state, code, code)
 }

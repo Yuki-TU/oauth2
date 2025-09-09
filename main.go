@@ -14,17 +14,59 @@ import (
 
 var startedAt = time.Now()
 
+// グローバル変数
+var (
+	db         *Database
+	repository *Repository
+)
+
 func main() {
 	logger := slog.Default()
 
+	// データベース接続を初期化
+	var err error
+	db, err = NewDatabase()
+	if err != nil {
+		logger.Error("データベース接続の初期化に失敗しました", "error", err)
+		os.Exit(1)
+	}
+	defer db.Close()
+
+	// リポジトリを初期化
+	repository = NewRepository(db)
+
+	// クリーンアップタスクを定期実行
+	go func() {
+		ticker := time.NewTicker(1 * time.Hour)
+		defer ticker.Stop()
+		for range ticker.C {
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			if err := repository.CleanupExpiredTokens(ctx); err != nil {
+				logger.Error("期限切れトークンのクリーンアップに失敗しました", "error", err)
+			}
+			cancel()
+		}
+	}()
+
 	mux := http.NewServeMux()
 
-	// ヘルスチェック
-	mux.HandleFunc("GET /healthz", healthz)
+	// ホームページ
+	mux.HandleFunc("GET /", homeHandler)
 
-	// OAuth2エンドポイント
+	// ヘルスチェックとデバッグ
+	mux.HandleFunc("GET /healthz", healthz)
+	mux.HandleFunc("GET /debug", debugRequestHandler)
+	mux.HandleFunc("GET /pkce", pkceDemo)
+
+	// 認証エンドポイント
 	mux.HandleFunc("GET /login", loginGetHandler)
 	mux.HandleFunc("POST /login", loginPostHandler)
+	mux.HandleFunc("GET /signup", signupGetHandler)
+	mux.HandleFunc("POST /signup", signupPostHandler)
+	mux.HandleFunc("GET /logout", logoutHandler)
+	mux.HandleFunc("POST /logout", logoutHandler)
+
+	// OAuth2エンドポイント
 	mux.HandleFunc("GET /authorize", authorizeHandler)
 	mux.HandleFunc("POST /token", tokenHandler)
 	mux.HandleFunc("GET /callback", callbackHandler)

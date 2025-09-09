@@ -22,7 +22,16 @@ test: ## Run tests
 
 .PHONY: run
 run: ## Run the application
-	go run main.go
+	env $(cat .env | xargs) go run *.go
+
+.PHONY: build
+build: ## Build the application
+	go build -o oauth2-server *.go
+
+.PHONY: deps
+deps: ## Download and install dependencies
+	go mod tidy
+	go mod download
 
 .PHONY: db
 db: ## Run the database
