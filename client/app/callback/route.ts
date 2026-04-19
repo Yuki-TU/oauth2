@@ -1,26 +1,19 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { applyDemoTokenCookies } from "@/lib/apply-token-cookies";
 import {
   oauthClientId,
   oauthClientSecret,
   oauthIssuer,
   oauthRedirectURI,
 } from "@/lib/oauth-config";
+import type { OAuthTokenJSON } from "@/lib/oauth-token-types";
 
 function redirectWithError(request: Request, message: string) {
   const base = new URL("/", request.url);
   base.searchParams.set("oauth_error", message);
   return NextResponse.redirect(base);
 }
-
-type TokenResponse = {
-  access_token: string;
-  token_type: string;
-  expires_in: number;
-  refresh_token?: string;
-  id_token?: string;
-  scope?: string;
-};
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -74,7 +67,7 @@ export async function GET(request: Request) {
     );
   }
 
-  const tokens = (await tokenRes.json()) as TokenResponse;
+  const tokens = (await tokenRes.json()) as OAuthTokenJSON;
 
   const home = new URL("/", request.url);
   const res = NextResponse.redirect(home);
@@ -83,33 +76,7 @@ export async function GET(request: Request) {
   res.cookies.delete("oauth_state");
   res.cookies.delete("oauth_nonce");
 
-  res.cookies.set("demo_access_token", tokens.access_token, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    maxAge: tokens.expires_in ?? 3600,
-    path: "/",
-  });
-
-  if (tokens.refresh_token) {
-    res.cookies.set("demo_refresh_token", tokens.refresh_token, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 60 * 60 * 24 * 30,
-      path: "/",
-    });
-  }
-
-  if (tokens.id_token) {
-    res.cookies.set("demo_id_token", tokens.id_token, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      maxAge: tokens.expires_in ?? 3600,
-      path: "/",
-    });
-  }
+  applyDemoTokenCookies(res, tokens);
 
   return res;
 }
