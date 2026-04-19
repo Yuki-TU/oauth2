@@ -27,6 +27,14 @@ go.work.sum
 # env file
 .env
 
+# Next.js demo client
+client/node_modules
+client/.next
+client/.env.local
+
+# local Go binary
+/oauth2
+
 # Editor/IDE
 # .idea/
 # .vscode/
