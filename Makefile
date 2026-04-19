@@ -37,6 +37,10 @@ deps: ## Download and install dependencies
 db: ## Run the database
 	docker compose exec postgres psql -U $(DB_USER) -d $(DB_NAME)
 
+.PHONY: db-sync-demo-redirects
+db-sync-demo-redirects: ## oauth2_demo_client の redirect_uris を init.sql 相当に揃える（Invalid redirect_uri 対策）
+	docker compose exec -T postgres psql -U $(DB_USER) -d $(DB_NAME) < scripts/ensure-demo-client-redirects.sql
+
 .PHONY: create-key
 create-key: ## JWTに必要なキーを作成
 	@mkdir -p ./certificate
@@ -44,6 +48,14 @@ create-key: ## JWTに必要なキーを作成
 	@echo "Created secret.pem"
 	@openssl rsa -pubout < ./certificate/secret.pem > ./certificate/public.pem
 	@echo "Created public.pem"
+
+.PHONY: client-install
+client-install: ## Install Next.js demo client dependencies
+	cd client && npm install
+
+.PHONY: client-dev
+client-dev: ## Run Next.js demo client on http://localhost:3000
+	cd client && npm run dev
 
 .PHONY: help
 help: ## Show help
