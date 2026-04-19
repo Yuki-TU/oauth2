@@ -119,6 +119,10 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
                     <h3>サインアップ</h3>
                     <p>新しいアカウントを作成</p>
                 </a>
+                <a href="/account" class="link-card">
+                    <h3>マイアカウント</h3>
+                    <p>ログインが必要な会員ページ</p>
+                </a>
             </div>
         </div>
 
@@ -133,6 +137,14 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
                     <h3>ヘルスチェック</h3>
                     <p>サーバーとデータベースの状態確認</p>
                 </a>
+                <a href="/jwks" class="link-card">
+                    <h3>JWKS エンドポイント</h3>
+                    <p>JWT署名検証用の公開鍵</p>
+                </a>
+                <a href="/.well-known/openid_configuration" class="link-card">
+                    <h3>OpenID Discovery</h3>
+                    <p>OpenID Connect 設定情報</p>
+                </a>
             </div>
         </div>
 
@@ -141,6 +153,9 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
             <ul class="feature-list">
                 <li>OAuth2 Authorization Code フロー</li>
                 <li>PKCE (Proof Key for Code Exchange) サポート</li>
+                <li>🆕 JWT アクセストークン & RSA署名</li>
+                <li>🆕 JWKS エンドポイント</li>
+                <li>🆕 OpenID Connect Discovery</li>
                 <li>PostgreSQL データベース連携</li>
                 <li>ユーザー登録・ログイン機能</li>
                 <li>セッション管理</li>
@@ -154,10 +169,15 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
             <h2>🔗 API エンドポイント</h2>
             <ul class="feature-list">
                 <li><strong>GET /authorize</strong> - OAuth2認可エンドポイント</li>
-                <li><strong>POST /token</strong> - OAuth2トークンエンドポイント</li>
+                <li><strong>POST /token</strong> - OAuth2トークンエンドポイント（JWT発行）</li>
                 <li><strong>GET /callback</strong> - OAuth2コールバック</li>
                 <li><strong>GET|POST /login</strong> - ログイン</li>
                 <li><strong>GET|POST /signup</strong> - ユーザー登録</li>
+                <li><strong>GET /account</strong> - マイアカウント（要ログイン）</li>
+                <li><strong>GET /jwks</strong> - JWT署名検証用公開鍵</li>
+                <li><strong>GET /.well-known/jwks.json</strong> - JWKS（標準）</li>
+                <li><strong>GET /.well-known/openid_configuration</strong> - OpenID Connect Discovery</li>
+                <li><strong>POST /tokeninfo</strong> - JWT トークン情報取得</li>
             </ul>
         </div>
 

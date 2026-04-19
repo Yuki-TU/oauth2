@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"log/slog"
+	"net/http"
+	"net/url"
 	"time"
 )
 
@@ -36,6 +38,26 @@ func getSessionUser(sessionID string) *Session {
 	}
 
 	return session
+}
+
+// currentSession は有効なブラウザセッションがあれば返し、なければ nil を返します。
+func currentSession(r *http.Request) *Session {
+	c, err := r.Cookie("session_id")
+	if err != nil || c.Value == "" {
+		return nil
+	}
+	return getSessionUser(c.Value)
+}
+
+// requireBrowserSession はセッションがなければログインへリダイレクトし nil を返します。
+func requireBrowserSession(w http.ResponseWriter, r *http.Request) *Session {
+	s := currentSession(r)
+	if s == nil {
+		loginURL := "/login?redirect=" + url.QueryEscape(r.URL.RequestURI())
+		http.Redirect(w, r, loginURL, http.StatusFound)
+		return nil
+	}
+	return s
 }
 
 // セッションを削除

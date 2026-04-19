@@ -64,6 +64,7 @@ func debugRequestHandler(w http.ResponseWriter, r *http.Request) {
             <li><a href="/healthz">GET /healthz</a> - ヘルスチェック</li>
             <li><a href="/login">GET /login</a> - ログインページ</li>
             <li><a href="/signup">GET /signup</a> - サインアップページ</li>
+            <li><a href="/account">GET /account</a> - マイアカウント（要ログイン）</li>
             <li>/authorize - OAuth2認可エンドポイント</li>
             <li>/token - OAuth2トークンエンドポイント</li>
             <li>/callback - OAuth2コールバック</li>

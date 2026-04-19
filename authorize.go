@@ -73,20 +73,8 @@ func authorizeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// セッションからユーザー情報を取得
-	sessionCookie, err := r.Cookie("session_id")
-	if err != nil {
-		// 未ログインの場合、ログインページにリダイレクト
-		loginURL := "/login?redirect=" + url.QueryEscape(r.URL.RequestURI())
-		http.Redirect(w, r, loginURL, http.StatusFound)
-		return
-	}
-
-	session := getSessionUser(sessionCookie.Value)
+	session := requireBrowserSession(w, r)
 	if session == nil {
-		// セッションが無効または期限切れの場合
-		loginURL := "/login?redirect=" + url.QueryEscape(r.URL.RequestURI())
-		http.Redirect(w, r, loginURL, http.StatusFound)
 		return
 	}
 

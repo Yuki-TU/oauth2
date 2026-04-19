@@ -108,16 +108,34 @@ func tokenHandler(w http.ResponseWriter, r *http.Request) {
 		logger.Info("PKCE検証が成功しました", "method", *authCode.CodeChallengeMethod)
 	}
 
-	// アクセストークンを生成してデータベースに保存
-	accessToken := generateRandomString(32)
+	// スコープを整理
 	scopes := []string{}
 	for _, scope := range authCode.Scopes {
 		if scope != "" {
 			scopes = append(scopes, scope)
 		}
 	}
+	scopeString := strings.Join(scopes, " ")
 
-	expiresAt := time.Now().Add(1 * time.Hour) // 1時間有効
+	// ユーザー名を取得
+	user, err := repository.GetUserByID(ctx, authCode.UserID)
+	if err != nil {
+		logger.Error("ユーザー情報の取得に失敗しました", "error", err.Error(), "userID", authCode.UserID)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	// JWTアクセストークンを生成（1時間有効）
+	expiresIn := 1 * time.Hour
+	accessToken, err := generateJWTAccessToken(authCode.UserID, user.Username, clientID, scopeString, expiresIn)
+	if err != nil {
+		logger.Error("JWTアクセストークンの生成に失敗しました", "error", err.Error())
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	// データベースにトークン情報を保存（JWT本体ではなく、メタデータのみ）
+	expiresAt := time.Now().Add(expiresIn)
 	createdToken, err := repository.CreateAccessToken(ctx, accessToken, clientID, &authCode.UserID, scopes, expiresAt)
 	if err != nil {
 		logger.Error("アクセストークンの作成に失敗しました", "error", err.Error())
@@ -141,10 +159,14 @@ func tokenHandler(w http.ResponseWriter, r *http.Request) {
 		response["scope"] = strings.Join(scopes, " ")
 	}
 
-	// OpenID Connectのnonceがある場合はid_tokenを生成（簡略化）
+	// OpenID ConnectのID Tokenを生成
 	if authCode.Nonce != nil && *authCode.Nonce != "" {
-		// 本来はJWTを生成するが、ここでは簡略化
-		response["id_token"] = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODAiLCJhdWQiOiJjbGllbnQxIiwic3ViIjoidXNlcjEiLCJub25jZSI6IiIrKmF1dGhDb2RlLk5vbmNlKyIsImV4cCI6MTYzNzIzNDU2N30.dummy_signature"
+		idToken, err := generateJWTIDToken(authCode.UserID, user.Username, clientID, *authCode.Nonce, 1*time.Hour)
+		if err != nil {
+			logger.Warn("ID Token生成に失敗しました", "error", err.Error())
+		} else {
+			response["id_token"] = idToken
+		}
 	}
 
 	// HTTPヘッダーを設定

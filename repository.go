@@ -67,6 +67,27 @@ func (r *Repository) GetUserByUsername(ctx context.Context, username string) (*U
 	return &user, nil
 }
 
+// GetUserByID はIDでユーザーを取得します
+func (r *Repository) GetUserByID(ctx context.Context, userID int) (*User, error) {
+	query := `
+		SELECT id, username, password_hash, email, created_at, updated_at
+		FROM users
+		WHERE id = $1`
+
+	var user User
+	err := r.db.db.QueryRowContext(ctx, query, userID).Scan(
+		&user.ID, &user.Username, &user.PasswordHash, &user.Email, &user.CreatedAt, &user.UpdatedAt,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("ユーザーが見つかりません: ID %d", userID)
+		}
+		return nil, fmt.Errorf("ユーザーの取得に失敗しました: %w", err)
+	}
+
+	return &user, nil
+}
+
 // ValidateUserPassword はユーザーのパスワードを検証します
 func (r *Repository) ValidateUserPassword(ctx context.Context, username, password string) (*User, error) {
 	user, err := r.GetUserByUsername(ctx, username)

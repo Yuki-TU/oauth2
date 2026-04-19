@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS authorization_codes (
 -- アクセストークンテーブル
 CREATE TABLE IF NOT EXISTS access_tokens (
     id SERIAL PRIMARY KEY,
-    token VARCHAR(255) UNIQUE NOT NULL,
+    token TEXT UNIQUE NOT NULL,
     client_id VARCHAR(255) NOT NULL,
     user_id INTEGER,
     scopes TEXT[],

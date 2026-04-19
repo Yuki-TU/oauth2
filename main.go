@@ -35,6 +35,12 @@ func main() {
 	// リポジトリを初期化
 	repository = NewRepository(db)
 
+	// JWT鍵を初期化
+	if err := initJWTKeys(); err != nil {
+		logger.Error("JWT鍵の初期化に失敗しました", "error", err)
+		os.Exit(1)
+	}
+
 	// クリーンアップタスクを定期実行
 	go func() {
 		ticker := time.NewTicker(1 * time.Hour)
@@ -66,10 +72,23 @@ func main() {
 	mux.HandleFunc("GET /logout", logoutHandler)
 	mux.HandleFunc("POST /logout", logoutHandler)
 
+	// ログイン必須ページ
+	mux.HandleFunc("GET /account", accountHandler)
+
 	// OAuth2エンドポイント
 	mux.HandleFunc("GET /authorize", authorizeHandler)
 	mux.HandleFunc("POST /token", tokenHandler)
 	mux.HandleFunc("GET /callback", callbackHandler)
+
+	// JWKS・OpenID Connect エンドポイント
+	mux.HandleFunc("GET /jwks", jwksHandler)
+	mux.HandleFunc("GET /.well-known/jwks.json", wellKnownJwksHandler)
+	mux.HandleFunc("GET /.well-known/openid_configuration", wellKnownOpenidConfigurationHandler)
+	mux.HandleFunc("POST /tokeninfo", tokenInfoHandler)
+
+	// JWT動作テスト用エンドポイント
+	mux.HandleFunc("GET /test-jwt", testJWTHandler)
+	mux.HandleFunc("POST /verify-jwt", verifyJWTHandler)
 
 	srv := &http.Server{
 		Addr:              ":8080",
