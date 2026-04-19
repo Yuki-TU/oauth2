@@ -265,6 +265,129 @@ func (r *Repository) RevokeAccessToken(ctx context.Context, token string) error 
 	return nil
 }
 
+// GetRefreshTokenBundle は、リフレッシュグラントで JWT を発行するために必要な user_id / scopes を返す。
+// 行ロックは行わない。競合時は CommitRefreshRotation が失敗し、呼び出し側は invalid_grant 相当で扱う。
+func (r *Repository) GetRefreshTokenBundle(ctx context.Context, refreshPlain, clientID string) (*RefreshTokenBundle, error) {
+	var uid sql.NullInt32
+	var scopes pq.StringArray
+	err := r.db.db.QueryRowContext(ctx, `
+		SELECT at.user_id, at.scopes
+		FROM refresh_tokens rt
+		INNER JOIN access_tokens at ON at.id = rt.access_token_id
+		WHERE rt.token = $1
+		  AND rt.expires_at > NOW()
+		  AND at.client_id = $2
+	`, refreshPlain, clientID).Scan(&uid, &scopes)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("無効または期限切れのリフレッシュトークンです")
+		}
+		return nil, fmt.Errorf("リフレッシュトークンの取得に失敗しました: %w", err)
+	}
+	if !uid.Valid {
+		return nil, fmt.Errorf("リフレッシュトークンに紐づくユーザーがありません")
+	}
+
+	out := &RefreshTokenBundle{UserID: int(uid.Int32)}
+	for _, s := range scopes {
+		if s != "" {
+			out.Scopes = append(out.Scopes, s)
+		}
+	}
+	return out, nil
+}
+
+// CreateRefreshToken は認可コード交換直後に、access_tokens.id に紐づく refresh_tokens 行を1件 INSERT する。
+func (r *Repository) CreateRefreshToken(ctx context.Context, token string, accessTokenID int, expiresAt time.Time) (*RefreshToken, error) {
+	query := `
+		INSERT INTO refresh_tokens (token, access_token_id, expires_at)
+		VALUES ($1, $2, $3)
+		RETURNING id, token, access_token_id, expires_at, created_at`
+
+	var rt RefreshToken
+	err := r.db.db.QueryRowContext(ctx, query, token, accessTokenID, expiresAt).Scan(
+		&rt.ID, &rt.Token, &rt.AccessTokenID, &rt.ExpiresAt, &rt.CreatedAt,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("リフレッシュトークンの作成に失敗しました: %w", err)
+	}
+
+	return &rt, nil
+}
+
+// CommitRefreshRotation はリフレッシュトークンのローテーションを1トランザクションで行う。
+// 手順: (1) 旧 rt+at を FOR UPDATE で取得 (2) 新 at / 新 rt を INSERT (3) 旧 at を DELETE → ON DELETE CASCADE で旧 rt も消える。
+// これにより同じ refresh 値の二重使用や、中間状態の孤立行を防ぐ。
+func (r *Repository) CommitRefreshRotation(ctx context.Context, refreshPlain, clientID, newAccessToken, newRefreshPlain string, accessExpiresAt, refreshExpiresAt time.Time) error {
+	tx, err := r.db.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("トランザクション開始に失敗しました: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	var oldAccessID int
+	var uid sql.NullInt32
+	var scopes pq.StringArray
+
+	// 対象行をロックしてから入れ替え（並行リフレッシュの片方はここで待ち、他方は行消失で失敗しうる）
+	err = tx.QueryRowContext(ctx, `
+		SELECT at.id, at.user_id, at.scopes
+		FROM refresh_tokens rt
+		INNER JOIN access_tokens at ON at.id = rt.access_token_id
+		WHERE rt.token = $1
+		  AND rt.expires_at > NOW()
+		  AND at.client_id = $2
+		FOR UPDATE
+	`, refreshPlain, clientID).Scan(&oldAccessID, &uid, &scopes)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return fmt.Errorf("無効または期限切れのリフレッシュトークンです")
+		}
+		return fmt.Errorf("リフレッシュトークンの検証に失敗しました: %w", err)
+	}
+	if !uid.Valid {
+		return fmt.Errorf("リフレッシュトークンに紐づくユーザーがありません")
+	}
+
+	userID := int(uid.Int32)
+	scopeSlice := make([]string, 0, len(scopes))
+	for _, s := range scopes {
+		if s != "" {
+			scopeSlice = append(scopeSlice, s)
+		}
+	}
+
+	var newAccessID int
+	err = tx.QueryRowContext(ctx, `
+		INSERT INTO access_tokens (token, client_id, user_id, scopes, expires_at)
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING id
+	`, newAccessToken, clientID, userID, pq.Array(scopeSlice), accessExpiresAt).Scan(&newAccessID)
+	if err != nil {
+		return fmt.Errorf("アクセストークンの作成に失敗しました: %w", err)
+	}
+
+	_, err = tx.ExecContext(ctx, `
+		INSERT INTO refresh_tokens (token, access_token_id, expires_at)
+		VALUES ($1, $2, $3)
+	`, newRefreshPlain, newAccessID, refreshExpiresAt)
+	if err != nil {
+		return fmt.Errorf("リフレッシュトークンの作成に失敗しました: %w", err)
+	}
+
+	// 旧 access 削除で、紐づく旧 refresh（同一トランザクション内の対象行）は FK CASCADE でまとめて削除される
+	_, err = tx.ExecContext(ctx, `DELETE FROM access_tokens WHERE id = $1`, oldAccessID)
+	if err != nil {
+		return fmt.Errorf("旧アクセストークンの失効に失敗しました: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("トランザクションのコミットに失敗しました: %w", err)
+	}
+
+	return nil
+}
+
 // セッション管理メソッド
 
 // CreateSession は新しいセッションを作成します

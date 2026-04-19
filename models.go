@@ -64,6 +64,12 @@ type RefreshToken struct {
 	CreatedAt     time.Time `json:"created_at"`
 }
 
+// RefreshTokenBundle は grant_type=refresh_token 時に JWT クレームを組み立てるための中間データ。
+type RefreshTokenBundle struct {
+	UserID int      `json:"user_id"`
+	Scopes []string `json:"scopes"`
+}
+
 // Session はセッション情報を表す構造体
 type Session struct {
 	ID        string    `json:"id"`

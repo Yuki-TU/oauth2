@@ -108,4 +108,7 @@ INSERT INTO oauth_clients (client_id, client_secret, name, redirect_uris, scopes
 ('admin_console', 'admin_secret_super_secure_456', 'Admin Console', 
  '{"http://localhost:8081/admin/callback"}',
  '{"read", "write", "admin", "user_management"}')
-ON CONFLICT (client_id) DO NOTHING;
+ON CONFLICT (client_id) DO UPDATE SET
+  redirect_uris = EXCLUDED.redirect_uris,
+  scopes = EXCLUDED.scopes,
+  updated_at = CURRENT_TIMESTAMP;
