@@ -57,9 +57,18 @@ client-install: ## Install Next.js demo client dependencies
 client-dev: ## Run Next.js demo client on http://localhost:3000
 	cd client && npm run dev
 
+.PHONY: backend-dotenv
+backend-dotenv: ## backend/.env が無ければ .env.example からコピー（既存は上書きしない）
+	@if [ ! -f backend/.env ]; then cp backend/.env.example backend/.env && echo "Created backend/.env from backend/.env.example"; fi
+
 .PHONY: backend-run
-backend-run: ## リソースサーバー（JWKS で JWT 検証）を http://localhost:9090 で起動（:8080 の認可サーバーが必要）
-	cd backend && go run .
+backend-run: backend-dotenv ## リソースサーバー（JWKS で JWT 検証）。:8080 起動後に（env + .env はルートの make run と同型）
+	cd backend && \
+	if grep -q '^[^#[:space:]]' .env 2>/dev/null; then \
+	  env $$(grep -v '^[[:space:]]*#' .env | grep -v '^[[:space:]]*$$' | xargs) go run .; \
+	else \
+	  go run .; \
+	fi
 
 .PHONY: help
 help: ## Show help

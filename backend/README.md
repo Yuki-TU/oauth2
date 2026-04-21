@@ -8,19 +8,30 @@
 - 検証する JWT の **`iss`** が `RESOURCE_EXPECTED_ISS`（既定 `oauth2-server`）と一致すること
 - アルゴリズムは **RS256**、`kid` ヘッダで JWKS の鍵を引き当てます
 
+## 環境変数ファイル
+
+`backend/.env` は Git 対象外です。ルートで **`make backend-dotenv`** すると、無いときだけ `backend/.env.example` からコピーされます（`make backend-run` の前に自動で走ります）。
+
+手動なら:
+
+```bash
+cd backend
+cp .env.example .env
+```
+
 ## 起動
 
-リポジトリルートから:
+**`make backend-run`** は認可サーバーの `make run` と同様に、**`env $(grep … .env | xargs) go run .`** で環境変数を渡します（`#` 始まりと空行は無視）。変数行が1行も無いときは `go run .` のみ（コードの既定値）。
 
 ```bash
 make backend-run
 ```
 
-または:
+手で同じ形にしたい場合:
 
 ```bash
 cd backend
-go run .
+env $(grep -v '^[[:space:]]*#' .env | grep -v '^[[:space:]]*$' | xargs) go run .
 ```
 
 既定の待ち受けは **`http://localhost:9090`**（`RESOURCE_LISTEN_ADDR` で変更）。

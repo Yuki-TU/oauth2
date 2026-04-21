@@ -59,7 +59,7 @@ PostgreSQL を使った **OAuth2 / OIDC 風の認可サーバー**（Go）、**N
 
 6. **（任意）Next クライアント** — 別ターミナルで [client/README.md](client/README.md) の手順（`client/env.example` を `.env.local` にコピーなど）。
 
-7. **（任意）リソースサーバー** — 認可サーバー起動後、別ターミナルで `make backend-run`（[backend/README.md](backend/README.md)）。
+7. **（任意）リソースサーバー** — 認可サーバー起動後、別ターミナルで `make backend-run`（[backend/README.md](backend/README.md)）。初回は `backend/.env` が無いと `make backend-dotenv` 相当で `.env.example` から作成されます。環境変数の渡し方はルートの `make run` と同型（`env $(grep … \| xargs) go run .`）。
 
 ## ディレクトリ構成（抜粋）
 
@@ -70,7 +70,7 @@ PostgreSQL を使った **OAuth2 / OIDC 風の認可サーバー**（Go）、**N
 ├── compose.yaml
 ├── Makefile
 ├── client/                             # Next.js（:3000）
-└── backend/                            # リソースサーバー（:9090、独立 go.mod）
+└── backend/                            # リソースサーバー（:9090、独立 go.mod・.env.example）
 ```
 
 ## よく使う Make ターゲット
@@ -86,7 +86,8 @@ PostgreSQL を使った **OAuth2 / OIDC 風の認可サーバー**（Go）、**N
 | `make db-sync-demo-redirects`             | 起動済み DB に `init.sql` を再適用（開発用・冪等） |
 | `make create-key`                         | JWT 用 RSA 鍵を `certificate/` に生成              |
 | `make client-install` / `make client-dev` | Next の依存導入・開発サーバー                      |
-| `make backend-run`                        | リソースサーバー                                   |
+| `make backend-dotenv`                     | `backend/.env` が無ければ `.env.example` から作成 |
+| `make backend-run`                        | リソースサーバー（上記のあと `env` + `.env` で起動） |
 
 ## 認可サーバー（ルート）の概要
 
