@@ -38,8 +38,8 @@ db: ## Run the database
 	docker compose exec postgres psql -U $(DB_USER) -d $(DB_NAME)
 
 .PHONY: db-sync-demo-redirects
-db-sync-demo-redirects: ## oauth2_demo_client の redirect_uris を init.sql 相当に揃える（Invalid redirect_uri 対策）
-	docker compose exec -T postgres psql -U $(DB_USER) -d $(DB_NAME) < scripts/ensure-demo-client-redirects.sql
+db-sync-demo-redirects: ## 起動済み DB に init.sql を再適用（スキーマ・シード・デモ redirect を冪等に揃える）
+	docker compose exec -T postgres psql -U $(DB_USER) -d $(DB_NAME) < init.sql
 
 .PHONY: create-key
 create-key: ## JWTに必要なキーを作成
