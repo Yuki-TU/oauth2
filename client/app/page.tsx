@@ -3,6 +3,8 @@ import Link from "next/link";
 import { TokenRefresher } from "@/app/components/TokenRefresher";
 import { decodeJwtPayload, jwtExpWithin } from "@/lib/jwt-decode";
 import { oauthIssuer, oauthIssuerPortLabel } from "@/lib/oauth-config";
+import { resourceServerURL } from "@/lib/resource-server";
+import { ResourceMePanel } from "@/app/components/ResourceMePanel";
 
 type Props = {
   searchParams: Promise<{ oauth_error?: string }>;
@@ -136,6 +138,7 @@ export default async function Home({ searchParams }: Props) {
                 <pre>{JSON.stringify(idClaims, null, 2)}</pre>
               </>
             ) : null}
+            <ResourceMePanel resourceOrigin={resourceServerURL()} />
           </>
         )}
       </div>

@@ -171,3 +171,35 @@ pre {
   background: rgba(52, 211, 153, 0.15);
   color: #6ee7b7;
 }
+
+/* リソースサーバー呼び出しデモ用 */
+.demo-strip {
+  margin-top: 1.25rem;
+  padding: 1rem 1.15rem;
+  border-radius: 10px;
+  border: 1px solid rgba(61, 139, 253, 0.35);
+  background: rgba(61, 139, 253, 0.08);
+}
+
+.demo-strip > p {
+  margin-bottom: 0.65rem;
+  font-size: 0.88rem;
+}
+
+.demo-strip h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.demo-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.45rem;
+  border-radius: 4px;
+  background: var(--accent);
+  color: #fff;
+}

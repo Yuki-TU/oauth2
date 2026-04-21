@@ -57,6 +57,10 @@ client-install: ## Install Next.js demo client dependencies
 client-dev: ## Run Next.js demo client on http://localhost:3000
 	cd client && npm run dev
 
+.PHONY: backend-run
+backend-run: ## リソースサーバー（JWKS で JWT 検証）を http://localhost:9090 で起動（:8080 の認可サーバーが必要）
+	cd backend && go run .
+
 .PHONY: help
 help: ## Show help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'

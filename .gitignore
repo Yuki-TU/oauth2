@@ -34,6 +34,7 @@ client/.env.local
 
 # local Go binary
 /oauth2
+/backend/resource-server
 
 # Editor/IDE
 # .idea/
