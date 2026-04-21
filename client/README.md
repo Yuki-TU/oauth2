@@ -9,9 +9,18 @@
 
 ## セットアップ
 
+ルートから（**`client/.env.local` が無いと `env.example` から自動作成**されます）:
+
+```bash
+make client-install   # 初回のみ
+make client-dev
+```
+
+手動でも同じです。
+
 ```bash
 cd client
-cp env.example .env.local
+cp env.example .env.local   # またはルートで make client-dotenv
 npm install
 npm run dev
 ```
@@ -48,7 +57,7 @@ npm run dev
 | `npm run dev`                     | 開発サーバー（`:3000`）     |
 | `npm run build` / `npm run start` | 本番ビルドと起動（`:3000`） |
 
-リポジトリルートからは `make client-install` と `make client-dev` でも同じことができます。
+リポジトリルートからは `make client-dotenv`（`.env.local` のみ作成）、`make client-install`、`make client-dev` を使えます。Next が `.env.local` を読み込むため、**`env $(grep …)` のようなシェル注入は不要**です。
 
 ## 関連
 

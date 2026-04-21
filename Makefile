@@ -49,12 +49,16 @@ create-key: ## JWTに必要なキーを作成
 	@openssl rsa -pubout < ./certificate/secret.pem > ./certificate/public.pem
 	@echo "Created public.pem"
 
+.PHONY: client-dotenv
+client-dotenv: ## client/.env.local が無ければ env.example からコピー（既存は上書きしない）
+	@if [ ! -f client/.env.local ]; then cp client/env.example client/.env.local && echo "Created client/.env.local from client/env.example"; fi
+
 .PHONY: client-install
 client-install: ## Install Next.js demo client dependencies
 	cd client && npm install
 
 .PHONY: client-dev
-client-dev: ## Run Next.js demo client on http://localhost:3000
+client-dev: client-dotenv ## Next.js 開発サーバー（:3000）。初回は .env.local を env.example から作成
 	cd client && npm run dev
 
 .PHONY: backend-dotenv
