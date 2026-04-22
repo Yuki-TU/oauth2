@@ -91,7 +91,7 @@ ON CONFLICT (username) DO NOTHING;
 INSERT INTO oauth_clients (client_id, client_secret, name, redirect_uris, scopes) VALUES 
 -- Webアプリケーション用クライアント
 ('oauth2_demo_client', 'demo_client_secret_12345', 'OAuth2 Demo Application', 
- '{"http://localhost:3000/callback", "http://localhost:3000/auth/callback", "https://oauthdebugger.com/debug"}',
+ '{"http://localhost:3000/callback", "http://localhost:3000/auth/callback", "https://oauthdebugger.com/debug", "http://localhost:8080/callback"}',
  '{"read", "write", "openid", "profile", "email"}'),
 
 -- SPAアプリケーション用クライアント（PKCE必須）

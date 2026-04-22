@@ -30,7 +30,7 @@ func pkceDemo(w http.ResponseWriter, r *http.Request) {
 
 	redirectURI := r.URL.Query().Get("redirect_uri")
 	if redirectURI == "" {
-		redirectURI = "http://localhost:3000/callback"
+		redirectURI = "http://localhost:8080/callback"
 	}
 
 	scope := r.URL.Query().Get("scope")

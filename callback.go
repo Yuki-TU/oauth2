@@ -3,6 +3,9 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"net/url"
+	"strconv"
+	"strings"
 )
 
 // コールバックエンドポイント（デモ用）
@@ -15,6 +18,7 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 	clientID := r.URL.Query().Get("client_id")
 	clientSecret := r.URL.Query().Get("client_secret")
 	redirectURI := r.URL.Query().Get("redirect_uri")
+	codeVerifier := strings.TrimSpace(r.URL.Query().Get("code_verifier"))
 
 	// デフォルト値を設定
 	if clientID == "" {
@@ -24,8 +28,33 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 		clientSecret = "demo_client_secret_12345"
 	}
 	if redirectURI == "" {
-		redirectURI = "http://localhost:3000/callback"
+		redirectURI = "http://localhost:8080/callback"
 	}
+
+	pkceVals := url.Values{}
+	pkceVals.Set("grant_type", "authorization_code")
+	pkceVals.Set("code", code)
+	pkceVals.Set("redirect_uri", redirectURI)
+	pkceVals.Set("client_id", clientID)
+	pkceVals.Set("client_secret", clientSecret)
+	if codeVerifier != "" {
+		pkceVals.Set("code_verifier", codeVerifier)
+	} else {
+		pkceVals.Set("code_verifier", "YOUR_CODE_VERIFIER")
+	}
+	curlPKCE := fmt.Sprintf(`curl -X POST http://localhost:8080/token \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d %s`, strconv.Quote(pkceVals.Encode()))
+
+	noPKCEVals := url.Values{}
+	noPKCEVals.Set("grant_type", "authorization_code")
+	noPKCEVals.Set("code", code)
+	noPKCEVals.Set("redirect_uri", redirectURI)
+	noPKCEVals.Set("client_id", clientID)
+	noPKCEVals.Set("client_secret", clientSecret)
+	curlNoPKCE := fmt.Sprintf(`curl -X POST http://localhost:8080/token \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d %s`, strconv.Quote(noPKCEVals.Encode()))
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
@@ -161,6 +190,11 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
                     <label for="redirect_uri">Redirect URI:</label>
                     <input type="text" id="redirect_uri" name="redirect_uri" value="%s">
                 </div>
+
+                <div class="form-group">
+                    <label for="code_verifier">Code Verifier（PKCE）:</label>
+                    <input type="text" id="code_verifier" name="code_verifier" value="%s" placeholder="認可リクエスト時の code_verifier（S256 なら必須）" autocomplete="off" spellcheck="false">
+                </div>
                 
                 <button type="submit" class="btn">curlコマンドを更新</button>
             </form>
@@ -169,20 +203,16 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
         <h2>🚀 トークン取得コマンド</h2>
         
         <div class="info">
-            <strong>注意:</strong> PKCEを使用している場合、認可リクエスト時に使用したcode_verifierが必要です。
+            <strong>注意:</strong> PKCE（S256）の場合は認可時に使った <code>code_verifier</code> を上のフォームに入れて「curlコマンドを更新」すると、下の PKCE 用 curl に反映されます。未入力のときはプレースホルダ <code>YOUR_CODE_VERIFIER</code> のままです。
         </div>
 
         <h3>PKCEありの場合:</h3>
-        <pre id="curlCommand">curl -X POST http://localhost:8080/token \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "grant_type=authorization_code&code=%s&redirect_uri=%s&client_id=%s&client_secret=%s&code_verifier=YOUR_CODE_VERIFIER"</pre>
+        <pre id="curlCommand">%s</pre>
         
         <button onclick="copyToClipboard('curlCommand')" class="btn btn-copy">📋 コピー</button>
         
         <h3>PKCEなしの場合:</h3>
-        <pre id="curlCommandNoPKCE">curl -X POST http://localhost:8080/token \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "grant_type=authorization_code&code=%s&redirect_uri=%s&client_id=%s&client_secret=%s"</pre>
+        <pre id="curlCommandNoPKCE">%s</pre>
         
         <button onclick="copyToClipboard('curlCommandNoPKCE')" class="btn btn-copy">📋 コピー</button>
 
@@ -220,14 +250,9 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 		escapeHTML(clientID),
 		escapeHTML(clientSecret),
 		escapeHTML(redirectURI),
-		escapeHTML(code),
-		escapeHTML(redirectURI),
-		escapeHTML(clientID),
-		escapeHTML(clientSecret),
-		escapeHTML(code),
-		escapeHTML(redirectURI),
-		escapeHTML(clientID),
-		escapeHTML(clientSecret))
+		escapeHTML(codeVerifier),
+		escapeHTML(curlPKCE),
+		escapeHTML(curlNoPKCE))
 
 	w.Write([]byte(html))
 }
