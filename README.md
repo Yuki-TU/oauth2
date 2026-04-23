@@ -16,11 +16,11 @@ PostgreSQL を使った **OAuth2 / OIDC 風の認可サーバー**（Go）、**N
 - **Go**（ルートと `backend/` は別モジュール）
 - **Node.js 20+**（Next クライアント）
 - **Docker**（PostgreSQL 用）
-- 認可サーバー用の **RSA 鍵**（初回のみ `make create-key`。`certificate/` は `.gitignore` 対象）
+- 認可サーバー用の **RSA 鍵**（`make create-key` で `certificate/jwt_private.pem` と `jwt_public.pem` を生成。未作成なら起動時に同パスへ自動生成。`certificate/` は `.gitignore` 対象）
 
 ## クイックスタート
 
-1. **鍵を生成**（未作成のときのみ）
+1. **鍵を生成**（未作成のときのみ。以前の `certificate/secret.pem` と `public.pem` は未使用なので削除してよい）
 
    ```bash
    make create-key
@@ -84,7 +84,7 @@ PostgreSQL を使った **OAuth2 / OIDC 風の認可サーバー**（Go）、**N
 | `make test`                               | ルートモジュールの `go test`                       |
 | `make db`                                 | コンテナ内 `psql` 対話シェル                       |
 | `make db-sync-demo-redirects`             | 起動済み DB に `init.sql` を再適用（開発用・冪等） |
-| `make create-key`                         | JWT 用 RSA 鍵を `certificate/` に生成              |
+| `make create-key`                         | JWT 用 RSA 鍵を `certificate/jwt_{private,public}.pem` に生成 |
 | `make client-dotenv`                      | `client/.env.local` が無ければ `env.example` から作成 |
 | `make client-install` / `make client-dev` | Next の依存導入・開発サーバー（dev は dotenv 後）   |
 | `make backend-dotenv`                     | `backend/.env` が無ければ `.env.example` から作成 |

@@ -41,14 +41,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	// クリーンアップタスクを定期実行
+	// 期限切れデータの定期削除（HTTP とは別ゴルーチン）
 	go func() {
+		// 1 時間ごと: 認可コード・アクセストークン・リフレッシュトークン・セッション
+		// （いずれも expires_at < 現在時刻）を DB から消す（repository.CleanupExpiredTokens）
 		ticker := time.NewTicker(1 * time.Hour)
 		defer ticker.Stop()
 		for range ticker.C {
+			// 1 回の掃除は長引かないよう上限 30 秒。超えたら ctx がキャンセルされ、
+			// その回の DELETE は打ち切られる。残りは次の 1 時間後の実行に任せる。
 			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 			if err := repository.CleanupExpiredTokens(ctx); err != nil {
-				logger.Error("期限切れトークンのクリーンアップに失敗しました", "error", err)
+				logger.Error("期限切れデータのクリーンアップに失敗しました", "error", err)
 			}
 			cancel()
 		}

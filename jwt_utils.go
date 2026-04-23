@@ -46,7 +46,9 @@ type JWK struct {
 	E   string `json:"e"`   // Exponent
 }
 
-// RSA鍵ペアの初期化
+// RSA鍵ペアの初期化（make create-key と同じパス）。
+// 起動時は jwt_private.pem のみ読み込み、公開鍵は秘密鍵から導出する。
+// jwt_public.pem は初回自動生成時にディスクへ書き、openssl で作った公開鍵と揃えておく用途。
 func initJWTKeys() error {
 	privateKeyPath := filepath.Join("certificate", "jwt_private.pem")
 	publicKeyPath := filepath.Join("certificate", "jwt_public.pem")
@@ -89,8 +91,8 @@ func generateRSAKeys(privateKeyPath, publicKeyPath string) error {
 		return fmt.Errorf("certificateディレクトリ作成エラー: %v", err)
 	}
 
-	// 2048ビットのRSA鍵ペアを生成
-	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	// RSA 鍵ペアを生成（ビット長は make create-key の openssl と揃える）
+	key, err := rsa.GenerateKey(rand.Reader, 4096)
 	if err != nil {
 		return fmt.Errorf("RSA鍵生成エラー: %v", err)
 	}

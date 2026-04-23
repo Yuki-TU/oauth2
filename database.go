@@ -13,14 +13,11 @@ import (
 
 // Database は PostgreSQL データベース接続を管理する構造体
 type Database struct {
-	db     *sql.DB
-	logger *slog.Logger
+	db *sql.DB
 }
 
 // NewDatabase は新しいデータベース接続を作成します
 func NewDatabase() (*Database, error) {
-	logger := slog.Default()
-
 	// 環境変数からデータベース接続情報を取得
 	host := getEnvWithDefault("DB_HOST", "localhost")
 	port := getEnvWithDefault("DB_PORT", "5432")
@@ -50,15 +47,12 @@ func NewDatabase() (*Database, error) {
 		return nil, fmt.Errorf("データベースへの接続に失敗しました: %w", err)
 	}
 
-	logger.Info("データベースに正常に接続されました",
+	slog.Default().Info("データベースに正常に接続されました",
 		"host", host,
 		"port", port,
 		"database", dbname)
 
-	return &Database{
-		db:     db,
-		logger: logger,
-	}, nil
+	return &Database{db: db}, nil
 }
 
 // Close はデータベース接続を閉じます

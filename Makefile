@@ -42,12 +42,11 @@ db-sync-demo-redirects: ## 起動済み DB に init.sql を再適用（スキー
 	docker compose exec -T postgres psql -U $(DB_USER) -d $(DB_NAME) < init.sql
 
 .PHONY: create-key
-create-key: ## JWTに必要なキーを作成
+create-key: ## JWT 用 RSA 鍵（jwt_utils.go と同じ certificate/jwt_{private,public}.pem）
 	@mkdir -p ./certificate
-	@openssl genrsa 4096 > ./certificate/secret.pem
-	@echo "Created secret.pem"
-	@openssl rsa -pubout < ./certificate/secret.pem > ./certificate/public.pem
-	@echo "Created public.pem"
+	@openssl genrsa -out ./certificate/jwt_private.pem 4096
+	@openssl rsa -pubout -in ./certificate/jwt_private.pem -out ./certificate/jwt_public.pem
+	@echo "Created certificate/jwt_private.pem and certificate/jwt_public.pem"
 
 .PHONY: client-dotenv
 client-dotenv: ## client/.env.local が無ければ env.example からコピー（既存は上書きしない）
