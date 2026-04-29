@@ -40,10 +40,15 @@ func bearerToken(r *http.Request) (string, bool) {
 
 // expectedIssuer は jwt.WithIssuer に渡す値。認可サーバーが付与している iss と一致させる。
 func expectedIssuer() string {
-	if v := os.Getenv("RESOURCE_EXPECTED_ISS"); v != "" {
+	// リソースサーバーが期待する iss。認可サーバー側の issuer（Discovery の issuer / JWT の iss）と揃える。
+	// 明示的に上書きしたいときだけ RESOURCE_EXPECTED_ISS を使う。
+	if v := strings.TrimSpace(os.Getenv("RESOURCE_EXPECTED_ISS")); v != "" {
 		return v
 	}
-	return "oauth2-server"
+	if v := strings.TrimSpace(os.Getenv("OAUTH_ISSUER")); v != "" {
+		return strings.TrimRight(v, "/")
+	}
+	return "http://localhost:8080"
 }
 
 // allowedAudiences は jwt.WithAudience に渡す許可リスト。

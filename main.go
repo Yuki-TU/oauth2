@@ -87,7 +87,8 @@ func main() {
 	// JWKS・OpenID Connect エンドポイント
 	mux.HandleFunc("GET /jwks", jwksHandler)
 	mux.HandleFunc("GET /.well-known/jwks.json", wellKnownJwksHandler)
-	mux.HandleFunc("GET /.well-known/openid_configuration", wellKnownOpenidConfigurationHandler)
+	mux.HandleFunc("GET /.well-known/openid-configuration", wellKnownOpenidConfigurationHandler)
+	mux.HandleFunc("GET /userinfo", userInfoHandler)
 	mux.HandleFunc("POST /tokeninfo", tokenInfoHandler)
 
 	// JWT動作テスト用エンドポイント

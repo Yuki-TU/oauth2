@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -56,52 +57,51 @@ func wellKnownJwksHandler(w http.ResponseWriter, r *http.Request) {
 
 // OpenID Connect Discovery エンドポイント
 func wellKnownOpenidConfigurationHandler(w http.ResponseWriter, r *http.Request) {
-	// サーバーのベースURL（環境変数またはデフォルト）
-	baseURL := "http://localhost:8080"
+	baseURL := issuerBaseURL()
 
-	// OpenID Connect Discovery レスポンス
-	discoveryResponse := fmt.Sprintf(`{
-  "issuer": "%s",
-  "authorization_endpoint": "%s/authorize",
-  "token_endpoint": "%s/token",
-  "jwks_uri": "%s/jwks",
-  "userinfo_endpoint": "%s/userinfo",
-  "response_types_supported": [
-    "code",
-    "code id_token"
-  ],
-  "subject_types_supported": [
-    "public"
-  ],
-  "id_token_signing_alg_values_supported": [
-    "RS256"
-  ],
-  "scopes_supported": [
-    "openid",
-    "profile",
-    "email",
-    "read",
-    "write"
-  ],
-  "claims_supported": [
-    "sub",
-    "iss",
-    "aud",
-    "exp",
-    "iat",
-    "username",
-    "scope",
-    "client_id"
-  ],
-  "grant_types_supported": [
-    "authorization_code",
-    "refresh_token"
-  ],
-  "code_challenge_methods_supported": [
-    "S256",
-    "plain"
-  ]
-}`, baseURL, baseURL, baseURL, baseURL, baseURL)
+	// OpenID Connect Discovery レスポンス（実装と整合する最小セット）
+	discovery := map[string]any{
+		"issuer":                 baseURL,
+		"authorization_endpoint": baseURL + "/authorize",
+		"token_endpoint":         baseURL + "/token",
+		"jwks_uri":               baseURL + "/jwks",
+		"userinfo_endpoint":      baseURL + "/userinfo",
+		"response_types_supported": []string{
+			"code",
+		},
+		"subject_types_supported": []string{
+			"public",
+		},
+		"id_token_signing_alg_values_supported": []string{
+			"RS256",
+		},
+		"scopes_supported": []string{
+			"openid",
+			"profile",
+			"email",
+			"read",
+			"write",
+		},
+		"claims_supported": []string{
+			"sub",
+			"iss",
+			"aud",
+			"exp",
+			"iat",
+			"nonce",
+			"username",
+			"client_id",
+			"scope",
+		},
+		"grant_types_supported": []string{
+			"authorization_code",
+			"refresh_token",
+		},
+		"code_challenge_methods_supported": []string{
+			"S256",
+			"plain",
+		},
+	}
 
 	// レスポンスヘッダーを設定
 	w.Header().Set("Content-Type", "application/json")
@@ -109,7 +109,7 @@ func wellKnownOpenidConfigurationHandler(w http.ResponseWriter, r *http.Request)
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(discoveryResponse))
+	_ = json.NewEncoder(w).Encode(discovery)
 
 	slog.Info("OpenID Connect Discovery エンドポイントにアクセスされました",
 		"remoteAddr", r.RemoteAddr,

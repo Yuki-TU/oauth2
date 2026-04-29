@@ -32,6 +32,15 @@ type CustomClaims struct {
 	Username string `json:"username,omitempty"`
 }
 
+// idTokenClaims は ID Token 用の最小クレーム。
+// Access Token と違い nonce が必要なため、別の構造体にして明示する。
+type idTokenClaims struct {
+	jwt.RegisteredClaims
+	Nonce    string `json:"nonce,omitempty"`
+	ClientID string `json:"client_id,omitempty"`
+	Username string `json:"username,omitempty"`
+}
+
 // JWKSレスポンス用の構造体
 type JWKSResponse struct {
 	Keys []JWK `json:"keys"`
@@ -151,7 +160,7 @@ func generateJWTAccessToken(userID int, username, clientID, scope string, expire
 	now := time.Now()
 	claims := CustomClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
-			Issuer:    "oauth2-server",
+			Issuer:    issuerBaseURL(),
 			Subject:   fmt.Sprintf("%d", userID),
 			Audience:  []string{clientID},
 			ExpiresAt: jwt.NewNumericDate(now.Add(expiresIn)),
@@ -167,6 +176,7 @@ func generateJWTAccessToken(userID int, username, clientID, scope string, expire
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
 	token.Header["kid"] = keyID
 
+	// トークンの署名
 	tokenString, err := token.SignedString(privateKey)
 	if err != nil {
 		return "", fmt.Errorf("JWT署名エラー: %v", err)
@@ -188,9 +198,9 @@ func generateJWTIDToken(userID int, username, clientID, nonce string, expiresIn 
 	}
 
 	now := time.Now()
-	claims := CustomClaims{
+	claims := idTokenClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
-			Issuer:    "oauth2-server",
+			Issuer:    issuerBaseURL(),
 			Subject:   fmt.Sprintf("%d", userID),
 			Audience:  []string{clientID},
 			ExpiresAt: jwt.NewNumericDate(now.Add(expiresIn)),
@@ -198,6 +208,7 @@ func generateJWTIDToken(userID int, username, clientID, nonce string, expiresIn 
 			IssuedAt:  jwt.NewNumericDate(now),
 			ID:        generateRandomString(16), // JTI (JWT ID)
 		},
+		Nonce:    nonce,
 		Username: username,
 		ClientID: clientID,
 	}
@@ -205,12 +216,6 @@ func generateJWTIDToken(userID int, username, clientID, nonce string, expiresIn 
 	// OpenID Connect用のクレームを追加
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
 	token.Header["kid"] = keyID
-
-	// nonceクレームを追加
-	if nonce != "" {
-		// TODO: nonceクレームを適切に追加
-		// 現在は簡略化のため省略
-	}
 
 	tokenString, err := token.SignedString(privateKey)
 	if err != nil {

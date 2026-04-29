@@ -43,3 +43,6 @@ client/.env.local
 
 # certificate
 certificate/
+
+# local gomod cache (accidentally created in repo)
+.gomodcache/
