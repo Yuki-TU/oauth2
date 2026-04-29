@@ -22,7 +22,11 @@ test: ## Run tests
 
 .PHONY: run
 run: ## Run the application
-	env $(cat .env | xargs) go run *.go
+	@if [ -f .env ] && grep -q '^[^#[:space:]]' .env 2>/dev/null; then \
+	  env $$(grep -v '^[[:space:]]*#' .env | grep -v '^[[:space:]]*$$' | xargs) go run *.go; \
+	else \
+	  go run *.go; \
+	fi
 
 .PHONY: build
 build: ## Build the application
@@ -59,6 +63,10 @@ client-install: ## Install Next.js demo client dependencies
 .PHONY: client-dev
 client-dev: client-dotenv ## Next.js 開発サーバー（:3000）。初回は .env.local を env.example から作成
 	cd client && npm run dev
+
+.PHONY: dotenv
+dotenv: ## ルートの .env が無ければ env.example からコピー（既存は上書きしない）
+	@if [ ! -f .env ]; then cp env.example .env && echo "Created .env from env.example"; fi
 
 .PHONY: backend-dotenv
 backend-dotenv: ## backend/.env が無ければ .env.example からコピー（既存は上書きしない）

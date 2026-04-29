@@ -39,7 +39,7 @@ PostgreSQL を使った **OAuth2 / OIDC 風の認可サーバー**（Go）、**N
    ```
 
 4. **認可サーバー用 `.env` を用意**  
-   `make run` は `env $(cat .env | xargs) go run *.go` のため、リポジトリ直下に `.env` が必要です。未設定でも `database.go` の既定値（`localhost:5432` の `oauth2_db` 等）で動きますが、空ファイルではなく **少なくとも1行あるファイル**にしてください。例:
+   リポジトリ直下に `.env` を置きます。未作成なら `make dotenv`（または `cp env.example .env`）で雛形を作れます。未設定でも `database.go` の既定値（`localhost:5432` の `oauth2_db` 等）で動きます。例:
 
    ```bash
    # .env（例）
@@ -79,7 +79,8 @@ PostgreSQL を使った **OAuth2 / OIDC 風の認可サーバー**（Go）、**N
 | ----------------------------------------- | -------------------------------------------------- |
 | `make help`                               | 一覧表示                                           |
 | `make up` / `make down`                   | PostgreSQL の起動・停止                            |
-| `make run`                                | 認可サーバー（要 `.env`）                          |
+| `make dotenv`                             | ルートの `.env` を `env.example` から作成（未作成時のみ） |
+| `make run`                                | 認可サーバー（`.env` は任意。あれば読み込む）      |
 | `make build`                              | 認可サーバーを `oauth2-server` にビルド            |
 | `make test`                               | ルートモジュールの `go test`                       |
 | `make db`                                 | コンテナ内 `psql` 対話シェル                       |
